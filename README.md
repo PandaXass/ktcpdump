@@ -1,2 +1,2 @@
 # ktcpdump
-A wrapper tool for tcpdump working on Kubernetes
+A wrapper bash script for tcpdump working nicely on Kubernetes

@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ktcpdump
+  namespace: kube-system
+  labels:
+      app: ktcpdump
+spec:
+  selector:
+    matchLabels:
+      app: ktcpdump
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 100%
+  template:
+    metadata:
+      labels:
+        app: ktcpdump
+    spec:
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      containers:
+      - image: praqma/network-multitool:latest
+        imagePullPolicy: IfNotPresent
+        name: nwtool
+        resources:
+          limits:
+            cpu: "50m"
+            memory: "50Mi"
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add: ["NET_ADMIN"]
+        command: ["/bin/sh", "-c"]
+        args: ["/usr/sbin/tcpdump __DEFAULT_ARGS__ __EXTRA_ARGS__ __KUBE_FILTERS__ __EXTRA_FILTERS__; tail -f /dev/null"]
+        env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
