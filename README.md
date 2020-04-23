@@ -31,13 +31,15 @@ ktcpdump create
 ktcpdump version
 # Capture traffic on all Kubenetes hosts
 ktcpdump run
-# Capture traffic on pod and write to the file
+# Capture traffic on Pod and write to the file
 ktcpdump run pod <pod_name> -w ktcpdump.pcap
-# Capture traffic from the source pod to the dest pod with verbose mode
+# Capture traffic from the source Pod to the dest Pod with verbose mode
 ktcpdump run -v src pod <pod1_name> and dst pod <pod2_name>
-# Capture RST packets between the daemon set and the deploy
-ktcpdump run ds <ds_name> and deploy <deploy_name> and 'tcp[tcpflags] & tcp-rst != 0'
-# Delete the daemon set created by the tool
+# Capture RST packets between Pod and Deployment
+ktcpdump run pod <pod_name> and deploy <deploy_name> and 'tcp[tcpflags] & tcp-rst != 0'
+# Rerun previous "run" command
+ktcpdump rerun
+# Delete the DaemonSet
 ktcpdump purge
 ```
 
