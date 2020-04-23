@@ -1,0 +1,80 @@
+#!/bin/bash
+
+usage() {
+cat << EOT
+usage: $0 subcommand
+
+subcommands
+    usage                             show this usage
+    create                            create DaemonSet without running tcpdump
+    run [ options ] [ expression ]    create DaemonSet and run tcpdump
+    rerun                             rerun previous run command
+    pruge                             delete DaemonSet
+    version                           show versions of ktcpdump and tcpdump
+
+default tcpdump options
+    tcpdump -n -i any -c 10000 --print
+
+new expressions
+    pod       <pod_name>
+    deploy    <deploy_name>
+    ds        <ds_name>
+EOT
+
+exit 1
+}
+
+create() {
+    sed -e "s/__DEFAULT_ARGS__/--version/" \
+        -e "s/__EXTRA_ARGS__//" \
+        kube/ds.yaml | kubectl apply --validate=true -f -
+}
+
+run () {
+    local default_args="-n -i any -c 10000 --print"
+    local extra_args="$@"
+
+    echo "/usr/sbin/tcpdump $default_args $extra_args"
+    sed -e "s/__DEFAULT_ARGS__/$default_args/" \
+        -e "s/__EXTRA_ARGS__/$extra_args/" \
+        kube/ds.yaml | kubectl apply --validate=true -f -
+}
+
+rerun () {
+    kubectl rollout restart -n kube-system daemonset/ktcpdump
+}
+
+purge () {
+    kubectl delete -n kube-system daemonset/ktcpdump
+}
+
+version () {
+    version="0.1.0"
+    echo "ktcpdump version 0.1.0"
+    pod=$(kubectl get pods -n kube-system -l app=ktcpdump --no-headers -o custom-columns=:metadata.name | head -n 1)
+    kubectl exec $pod -- tcpdump --version
+}
+
+case "$1" in
+    help|usage)
+        usage
+        ;;
+    create)
+        create
+        ;;
+    run)
+        run ${@:2}
+        ;;
+    rerun)
+        rerun
+        ;;
+    purge)
+        purge
+        ;;
+    version)
+        version
+        ;;
+    *)
+        usage
+        ;;
+esac

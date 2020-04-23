@@ -23,10 +23,11 @@ spec:
       tolerations:
       - operator: Exists
         effect: NoSchedule
+      terminationGracePeriodSeconds: 0
       containers:
       - image: praqma/network-multitool:latest
         imagePullPolicy: IfNotPresent
-        name: nwtool
+        name: network-multitool
         resources:
           limits:
             cpu: "50m"
@@ -36,7 +37,7 @@ spec:
           capabilities:
             add: ["NET_ADMIN"]
         command: ["/bin/sh", "-c"]
-        args: ["/usr/sbin/tcpdump __DEFAULT_ARGS__ __EXTRA_ARGS__ __KUBE_FILTERS__ __EXTRA_FILTERS__; tail -f /dev/null"]
+        args: ["/usr/sbin/tcpdump __DEFAULT_ARGS__ __EXTRA_ARGS__; tail -f /dev/null"]
         env:
         - name: HOST_IP
           valueFrom:
