@@ -13,7 +13,7 @@ The script extends the `tcpdump` expressions based on `pcap-filter`.
 2. deploy *deployment_name*
 3. ds *daemonset_name*
 
-The script runs `tcpdump` with options `-n -i any -c 10000 --print` by default, so it will not exhaust the disk space and create unneessary DNS requests by accident.
+The script runs `tcpdump` with options `-n -i any -c 10000 --print` by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
 
 ## Prerequisites
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
