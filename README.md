@@ -19,6 +19,7 @@ Some default behaviors:
 
 ## Prerequisites
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
+* [jq](https://stedolan.github.io/jq/) (1.6 or higher)
 
 ## Install
 TODO
