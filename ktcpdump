@@ -24,10 +24,10 @@ subcommands:
 default tcpdump options:
     tcpdump -nn -i any -c 10000
 
-new expression primitives:
-    pod    <pod_name>
-    deploy <deploy_name>
-    ds     <ds_name>
+custom filter primitives:
+    [ns_name/]pod/<pod_name>
+    [ns_name/]deploy/<deploy_name>
+    [ns_name/]ds/<ds_name>
 EOT
 
 exit 1
