@@ -1,24 +1,33 @@
 #!/bin/bash
+set -e
+set -o pipefail
+
+trap "exit 1" TERM
+term() {
+    kill -s TERM $$
+}
+
+CURR_NS=
 
 usage() {
 cat << EOT
 usage: $0 subcommand
 
-subcommands
+subcommands:
     usage                             show this usage
     create                            create DaemonSet without running tcpdump
     run [ options ] [ expression ]    create DaemonSet and run tcpdump
     rerun                             rerun previous run command
-    pruge                             delete DaemonSet
+    purge                             delete DaemonSet
     version                           show versions of ktcpdump and tcpdump
 
-default tcpdump options
+default tcpdump options:
     tcpdump -n -i any -c 10000 --print
 
-new expressions
-    pod       <pod_name>
-    deploy    <deploy_name>
-    ds        <ds_name>
+new expression primitives:
+    pod    <pod_name>
+    deploy <deploy_name>
+    ds     <ds_name>
 EOT
 
 exit 1
@@ -30,14 +39,73 @@ create() {
         kube/ds.yaml | kubectl apply --validate=true -f -
 }
 
+_get_curr_ns() {
+    CURR_NS=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+}
+
+_parse_filter() {
+    declare local filter
+    IFS='/' read -r -a filter <<< "$1"
+
+    if [ "${#filter[@]}" -eq 2 ]; then
+        echo "${CURR_NS} ${filter[1]}"
+    elif [ "${#filter[@]}" -eq 3 ]; then
+        echo "${filter[0]} ${filter[2]}"
+    else
+        >&2 echo "ktcpdump: can't parse filter expression: $1"
+        term
+    fi
+}
+
+_get_pod_ip() {
+    kubectl get po $2 -n $1 --no-headers -o custom-columns=:status.podIP
+    if [ $? -ne 0 ]; then
+        term
+    fi
+}
+
+_get_deploy_ips() {
+    deploy_name=$1
+}
+
+_get_ds_ips() {
+    ds_name=$1
+}
+
+_get_filter_exp() {
+    if [ "$#" -eq 1 ]; then
+        echo "host $1"
+    fi
+}
+
 run () {
     local default_args="-n -i any -c 10000 --print"
-    local extra_args="$@"
 
-    echo "/usr/sbin/tcpdump $default_args $extra_args"
-    sed -e "s/__DEFAULT_ARGS__/$default_args/" \
-        -e "s/__EXTRA_ARGS__/$extra_args/" \
-        kube/ds.yaml | kubectl apply --validate=true -f -
+    declare local extra_args
+    IFS=' ' read -r -a extra_args <<< $@
+
+    # Get current namespace
+    _get_curr_ns
+
+    # Loop over index
+    for i in "${!extra_args[@]}"
+    do
+        local arg="${extra_args[$i]}"
+        case "$arg" in
+            *"pod/"*)
+                extra_args[$i]=$(_get_filter_exp $(_get_pod_ip $(_parse_filter $arg)))
+                ;;
+            *"deploy/"*)
+                ;;
+            *"ds/"*)
+                ;;
+        esac
+    done
+
+    echo "/usr/sbin/tcpdump $default_args ${extra_args[@]}"
+    # sed -e "s/__DEFAULT_ARGS__/$default_args/" \
+    #     -e "s/__EXTRA_ARGS__/$extra_args/" \
+    #     kube/ds.yaml | kubectl apply --validate=true -f -
 }
 
 rerun () {
@@ -50,7 +118,8 @@ purge () {
 
 version () {
     version="0.1.0"
-    echo "ktcpdump version 0.1.0"
+
+    echo "ktcpdump version $version"
     pod=$(kubectl get pods -n kube-system -l app=ktcpdump --no-headers -o custom-columns=:metadata.name | head -n 1)
     kubectl exec $pod -- tcpdump --version
 }
