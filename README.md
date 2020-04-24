@@ -15,7 +15,7 @@ The script extends the `tcpdump` filter expressions by translating them to `pcap
 
 Some default behaviors:
 * If namespace is not specified, current namespace will be used.
-* The script runs `tcpdump` with [some options](https://github.com/PandaXass/ktcpdump/blob/ebcdab4e534f301a344237dff5427323581faf32/ktcpdump#L82) by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
+* The script runs `tcpdump` with [some options](https://github.com/PandaXass/ktcpdump/blob/fc20475fde6c98608171a984c559551684b5e07f/ktcpdump#L95) by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
 
 ## Prerequisites
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
@@ -49,4 +49,4 @@ ktcpdump purge
 
 ## Known Limitations
 * Running this tool could potentially generate a long `tcpdump` command. And the total size of the command line argument is limited to `getconf ARG_MAX`.
-* The tool retrieves the pods IPs in the very beginning. In Kubenetes, the pods (together with IPs) can be terminated and created dynamically. However they will not be reflected in the results. In other words, this tool might miss to capture some network packets due to pod changes.
+* The tool retrieves the pods IPs in the beginning of each `run`. In Kubenetes, the pods (together with IPs) can be created and terminated dynamically. However those changes will not be reflected in the output. In other words, this tool might miss capturing some network packets due to pod changes.
