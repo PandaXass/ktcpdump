@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 set -o pipefail
+# set -x
 
 trap "exit 1" TERM
 term() {
     kill -s TERM $$
 }
 
-CURR_NS=
 
 usage() {
 cat << EOT
@@ -22,7 +22,7 @@ subcommands:
     version                           show versions of ktcpdump and tcpdump
 
 default tcpdump options:
-    tcpdump -n -i any -c 10000 --print
+    tcpdump -nn -i any -c 10000
 
 new expression primitives:
     pod    <pod_name>
@@ -40,17 +40,18 @@ create() {
 }
 
 _get_curr_ns() {
-    CURR_NS=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    CURR_NS=$(kubectl config view -o jsonpath={..namespace})
 }
 
+# Return: namespace resource_type resource_name
 _parse_filter() {
     declare local filter
     IFS='/' read -r -a filter <<< "$1"
 
     if [ "${#filter[@]}" -eq 2 ]; then
-        echo "${CURR_NS} ${filter[1]}"
+        echo "${CURR_NS} ${filter[@]}"
     elif [ "${#filter[@]}" -eq 3 ]; then
-        echo "${filter[0]} ${filter[2]}"
+        echo "${filter[@]}"
     else
         >&2 echo "ktcpdump: can't parse filter expression: $1"
         term
@@ -58,28 +59,40 @@ _parse_filter() {
 }
 
 _get_pod_ip() {
-    kubectl get po $2 -n $1 --no-headers -o custom-columns=:status.podIP
+    local ns=$1
+    local rtype=$2
+    local rname=$3
+
+    case "$rtype" in
+        pod)
+            kubectl get po $rname -n $ns --no-headers -o custom-columns=:status.podIP
+            ;;
+        deploy|ds)
+            local selector=$(kubectl get $rtype $rname -n $ns -o json \
+                | jq -r .spec.selector.matchLabels \
+                | jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|join(",")')
+            kubectl get pods -n $ns -l $selector -o custom-columns=:status.podIP
+            ;;
+    esac
+
     if [ $? -ne 0 ]; then
         term
     fi
 }
 
-_get_deploy_ips() {
-    deploy_name=$1
-}
-
-_get_ds_ips() {
-    ds_name=$1
-}
-
 _get_filter_exp() {
     if [ "$#" -eq 1 ]; then
         echo "host $1"
+    elif [ "$#" -gt 1 ]; then
+        echo "host '($1$(printf ' or %s' ${@:2}))'"
+    else
+        >&2 echo "ktcpdump: can't parse filter expression: $1"
+        term
     fi
 }
 
 run () {
-    local default_args="-n -i any -c 10000 --print"
+    local default_args="-nn -i any -c 10000"
 
     declare local extra_args
     IFS=' ' read -r -a extra_args <<< $@
@@ -91,21 +104,17 @@ run () {
     for i in "${!extra_args[@]}"
     do
         local arg="${extra_args[$i]}"
-        case "$arg" in
-            *"pod/"*)
-                extra_args[$i]=$(_get_filter_exp $(_get_pod_ip $(_parse_filter $arg)))
-                ;;
-            *"deploy/"*)
-                ;;
-            *"ds/"*)
-                ;;
-        esac
+
+        # Translate custom filters to pcap-filter
+        if [[ "$arg" =~ (pod|deploy|ds)/  ]]; then
+            extra_args[$i]=$(_get_filter_exp $(_get_pod_ip $(_parse_filter $arg)))
+        fi
     done
 
     echo "/usr/sbin/tcpdump $default_args ${extra_args[@]}"
-    # sed -e "s/__DEFAULT_ARGS__/$default_args/" \
-    #     -e "s/__EXTRA_ARGS__/$extra_args/" \
-    #     kube/ds.yaml | kubectl apply --validate=true -f -
+    sed -e "s/__DEFAULT_ARGS__/$default_args/" \
+        -e "s/__EXTRA_ARGS__/$extra_args/" \
+        kube/ds.yaml | kubectl apply --validate=true -f -
 }
 
 rerun () {
@@ -121,7 +130,7 @@ version () {
 
     echo "ktcpdump version $version"
     pod=$(kubectl get pods -n kube-system -l app=ktcpdump --no-headers -o custom-columns=:metadata.name | head -n 1)
-    kubectl exec $pod -- tcpdump --version
+    kubectl exec $pod -n kube-system -- tcpdump --version
 }
 
 case "$1" in

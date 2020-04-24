@@ -14,13 +14,14 @@ The script extends the `tcpdump` filter expressions by translating them to `pcap
 3. [***namespace***/]ds/***daemonset_name***
 
 Some default behaviors:
-* If namespace is not specified, `default` will be used.
-* The script runs `tcpdump` with options `-n -i any -c 10000 --print` by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
+* If namespace is not specified, current namespace will be used.
+* The script runs `tcpdump` with [some options](https://github.com/PandaXass/ktcpdump/blob/ebcdab4e534f301a344237dff5427323581faf32/ktcpdump#L82) by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
 
 ## Prerequisites
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
 
 ## Install
+TODO
 
 ## Examples
 
