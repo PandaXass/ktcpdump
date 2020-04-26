@@ -1,5 +1,5 @@
 # ktcpdump
-A wrapper script for kubectl and tcpdump to work nicely on Kubernetes.
+A simple wrapper script to run tcpdump nicely on Kubernetes.
 
 This tool will deploy a DaemonSet in the Kubernetes cluster using `kubectl` and run `tcpdump` on host network to capture network traffic.
 
@@ -7,7 +7,7 @@ The DaemonSet is based on [praqma/network-multitool](https://github.com/Praqma/N
 
 ### !! Important Note: Please use this tool in production by **CAUTION** !!
 
-## What's New
+## What's new
 The script extends the `tcpdump` filter expressions by translating them to `pcap-filter` format.
 1. [***namespace***/]pod/***pod_name***
 2. [***namespace***/]deploy/***deployment_name***
@@ -21,10 +21,17 @@ Some default behaviors:
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
 * [jq](https://stedolan.github.io/jq/) (1.6 or higher)
 
-## Install
-TODO
+## Install from source
+Check out the ktcpdump repository. And then, run the provided `install.sh` command with the location to the prefix in which you want to install `ktcpdump`. By default, it installs the tool into `/usr/local`.
 
-## Examples
+```bash
+git clone https://git@github.com:PandaXass/ktcpdump.git
+cd ktcpdump
+sudo ./install.sh
+```
+
+## Usage examples
+Some examples about how to use the tool.
 
 ```bash
 # Show usage information
