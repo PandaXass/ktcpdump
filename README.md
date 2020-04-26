@@ -30,6 +30,14 @@ cd ktcpdump
 sudo ./install.sh
 ```
 
+### Uninstall
+```bash
+# Remove the installed directory
+sudo rm -r /usr/local/ktcpdump
+# Remove the symlink
+rm /usr/local/bin/ktcpdump
+```
+
 ## Usage examples
 Some examples about how to use the tool.
 
