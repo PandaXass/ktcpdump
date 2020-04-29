@@ -18,12 +18,15 @@ subcommands:
     usage                             show this usage
     create                            create DaemonSet without running tcpdump
     run [ options ] [ expression ]    create DaemonSet and run tcpdump
-    rerun                             restart DaemonSet to rerun tcpdump
+    rerun                             restart DaemonSet Pods to rerun tcpdump
+    cmd                               show tcpdump command in DaemonSet
+    logs                              show DaemonSet Pod logs
+    cp <capture_file>                 copy capture files from DaemonSet Pods to current working directory
     purge                             delete DaemonSet
     version                           show versions of ktcpdump and tcpdump
 
 default tcpdump options:
-    tcpdump -nn -i any -c 100000
+    tcpdump -nn -i any -c 10000
 
 custom filters:
     [ns_name/]pod/<pod_name>
@@ -93,7 +96,7 @@ _get_filter_exp() {
 }
 
 run () {
-    local default_args="-nn -i any -c 100000"
+    local default_args="-nn -i any -c 10000"
 
     declare -a local extra_args=()
     for i in "$@"
@@ -136,6 +139,26 @@ rerun () {
     kubectl rollout restart -n kube-system daemonset/ktcpdump
 }
 
+cmd () {
+    echo $(kubectl get -n kube-system daemonset/ktcpdump -o=jsonpath='{.spec.template.spec.containers[0].args[0]}')
+}
+
+logs () {
+    kubectl logs -n kube-system -l app=ktcpdump --tail=-1
+}
+
+cp () {
+    local pods=$(kubectl get pods -n kube-system -l app=ktcpdump -o=jsonpath='{.items[*].metadata.name}')
+    local dir=$(echo "ktcpdump-cp-$(date +%Y%m%d%H%M%S)")
+    mkdir -p ./$dir
+    for p in $pods
+    do
+        cp="kubectl cp kube-system/$p:$1 ./$dir/$p.$1 &"
+        echo "$cp"
+        eval "$cp"
+    done
+}
+
 purge () {
     kubectl delete -n kube-system daemonset/ktcpdump
 }
@@ -144,7 +167,7 @@ version () {
     version="0.1.0"
 
     echo "ktcpdump version $version"
-    pod=$(kubectl get pods -n kube-system -l app=ktcpdump --no-headers -o custom-columns=:metadata.name | head -n 1)
+    local pod=$(kubectl get pods -n kube-system -l app=ktcpdump --no-headers -o custom-columns=:metadata.name | head -n 1)
     kubectl exec $pod -n kube-system -- tcpdump --version
 }
 
@@ -160,6 +183,15 @@ case "$1" in
         ;;
     rerun)
         rerun
+        ;;
+    cmd)
+        cmd
+        ;;
+    logs)
+        logs
+        ;;
+    cp)
+        cp $2
         ;;
     purge)
         purge

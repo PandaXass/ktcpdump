@@ -18,8 +18,9 @@ Some default behaviors:
 * The script runs `tcpdump` with [some options](https://github.com/PandaXass/ktcpdump/blob/fc20475fde6c98608171a984c559551684b5e07f/ktcpdump#L95) by default, so it will not exhaust the disk space and create unnecessary DNS requests by accident.
 
 ## Prerequisites
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (1.15 or higher)
-* [jq](https://stedolan.github.io/jq/) (1.6 or higher)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.15 or higher
+* [jq](https://stedolan.github.io/jq/) 1.6 or higher
+* (optional) [Wireshark](https://www.wireshark.org/#download) 3.0 or higher
 
 ## Install from source
 Check out the ktcpdump repository. And then, run the provided `install.sh` command with the location to the prefix in which you want to install `ktcpdump`. By default, it installs the tool into `/usr/local`.
@@ -58,6 +59,12 @@ ktcpdump run -v src pod <pod1_name> and dst pod <pod2_name>
 ktcpdump run <ns1_name>/pod/<pod_name> and <ns2_name>/deploy/<deploy_name> and 'tcp[tcpflags] & (tcp-rst|tcp-fin) != 0'
 # Rerun previous "run" command
 ktcpdump rerun
+# Show ktcpdump DaemonSet logs
+ktcpdump logs
+# Copy ktcpdump.pcap file from DaemonSet Pods to local folder
+ktcpdump cp ktcpdump.pcap
+# Merge all capture files
+mergecap -w outfile.pcap *.pcap
 # Delete the DaemonSet
 ktcpdump purge
 ```
