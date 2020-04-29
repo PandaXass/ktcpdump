@@ -3,9 +3,10 @@ set -e
 set -o pipefail
 # set -x
 
+TOP_PID=$$
 trap "exit 1" TERM
 term() {
-    kill -s TERM $$
+    kill -s TERM $TOP_PID
 }
 
 
@@ -22,7 +23,7 @@ subcommands:
     version                           show versions of ktcpdump and tcpdump
 
 default tcpdump options:
-    tcpdump -nn -i any -c 10000
+    tcpdump -nn -i any -c 100000
 
 custom filters:
     [ns_name/]pod/<pod_name>
@@ -92,15 +93,25 @@ _get_filter_exp() {
 }
 
 run () {
-    local default_args="-nn -i any -c 10000"
+    local default_args="-nn -i any -c 100000"
 
-    declare local extra_args
-    IFS=' ' read -r -a extra_args <<< "$@"
+    declare -a local extra_args=()
+    for i in "$@"
+    do
+        case "$i" in
+            *\ *) # Add lost quotes from command line
+                extra_args+=("'$i'")
+                ;;
+            *)
+                extra_args+=("$i")
+                ;;
+        esac
+    done
 
     # Get current namespace
     _get_curr_ns
 
-    # Loop over index
+    # Loop over array with index
     for i in "${!extra_args[@]}"
     do
         local arg="${extra_args[$i]}"
@@ -108,6 +119,9 @@ run () {
         # Translate custom filters to pcap-filter
         if [[ "$arg" =~ (pod|deploy|ds)/  ]]; then
             extra_args[$i]=$(_get_filter_exp $(_get_pod_ip $(_parse_filter $arg)))
+        # Escape ampersand
+        elif [[ "$arg" ==  *"&"* ]]; then
+            extra_args[$i]="${arg/&/\&}"
         fi
     done
 
@@ -142,7 +156,7 @@ case "$1" in
         create
         ;;
     run)
-        run ${@:2}
+        run "${@:2}"
         ;;
     rerun)
         rerun
