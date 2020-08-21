@@ -20,6 +20,7 @@ subcommands:
     run [ options ] [ expression ]    create DaemonSet and run tcpdump
     rerun                             restart DaemonSet Pods to rerun tcpdump
     cmd                               show tcpdump command in DaemonSet
+    status                            show tcpdump status in DaemonSet
     logs                              show DaemonSet Pod logs
     cp <capture_file>                 copy capture files from DaemonSet Pods to current working directory
     purge                             delete DaemonSet
@@ -143,6 +144,19 @@ cmd () {
     echo $(kubectl get -n kube-system daemonset/ktcpdump -o=jsonpath='{.spec.template.spec.containers[0].args[0]}')
 }
 
+status () {
+    local pods=$(kubectl get pods -n kube-system -l app=ktcpdump -o=jsonpath='{.items[*].metadata.name}')
+    for p in $pods
+    do
+        kubectl exec $p -n kube-system -- pgrep tail &> /dev/null &
+        if [ $? -ne 0 ]; then
+            echo "$p - tcpdump ongoing"
+        else
+            echo "$p - tcpdump done"
+        fi
+    done
+}
+
 logs () {
     kubectl logs -n kube-system -l app=ktcpdump --tail=-1
 }
@@ -186,6 +200,9 @@ case "$1" in
         ;;
     cmd)
         cmd
+        ;;
+    status)
+        status
         ;;
     logs)
         logs

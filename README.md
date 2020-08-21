@@ -55,10 +55,14 @@ ktcpdump run
 ktcpdump run pod <pod_name> -w ktcpdump.pcap
 # Capture traffic from the source Pod to the dest Pod with verbose mode
 ktcpdump run -v src pod <pod1_name> and dst pod <pod2_name>
-# Capture RST packets between Pod and Deployment in different Namespaces
+# Capture RST and FIN packets between Pod and Deployment in different Namespaces
 ktcpdump run <ns1_name>/pod/<pod_name> and <ns2_name>/deploy/<deploy_name> and 'tcp[tcpflags] & (tcp-rst|tcp-fin) != 0'
+# Capture all TCP packets on destination Deployment port 8080
+./ktcpdump run -v dst <ns_name>/deploy/<deploy_name> and 'tcp port 8080'
 # Rerun previous "run" command
 ktcpdump rerun
+# Show ktcpdump status
+ktcpdump status
 # Show ktcpdump DaemonSet logs
 ktcpdump logs
 # Copy ktcpdump.pcap file from DaemonSet Pods to local folder
