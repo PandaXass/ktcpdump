@@ -25,7 +25,7 @@ spec:
         effect: NoSchedule
       terminationGracePeriodSeconds: 0
       containers:
-      - image: praqma/network-multitool:latest
+      - image: wbitt/network-multitool:latest
         imagePullPolicy: IfNotPresent
         name: network-multitool
         resources:
@@ -37,7 +37,7 @@ spec:
           capabilities:
             add: ["NET_ADMIN"]
         command: ["/bin/sh", "-c"]
-        args: ["/usr/sbin/tcpdump __DEFAULT_ARGS__ __EXTRA_ARGS__; tail -f /dev/null"]
+        args: ["/usr/bin/tcpdump __DEFAULT_ARGS__ __EXTRA_ARGS__; tail -f /dev/null"]
         env:
         - name: HOST_IP
           valueFrom:
