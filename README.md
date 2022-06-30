@@ -3,7 +3,7 @@ A simple wrapper script to run tcpdump nicely on Kubernetes.
 
 This tool will deploy a DaemonSet in the Kubernetes cluster using `kubectl` and run `tcpdump` on host network to capture network traffic.
 
-The DaemonSet is based on [praqma/network-multitool](https://github.com/Praqma/Network-MultiTool) Docker image.
+The DaemonSet is based on [wbitt/network-multitool](https://hub.docker.com/r/wbitt/network-multitool) Docker image.
 
 ### !! Important Note: Please use this tool in production by **CAUTION** !!
 

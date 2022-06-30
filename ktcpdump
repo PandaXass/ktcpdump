@@ -130,7 +130,7 @@ run () {
     done
 
     extra_args=$(printf "%s " "${extra_args[@]}")
-    echo "/usr/sbin/tcpdump $default_args $extra_args"
+    echo "/usr/bin/tcpdump $default_args $extra_args"
     sed -e "s/__DEFAULT_ARGS__/$default_args/" \
         -e "s/__EXTRA_ARGS__/$extra_args/" \
         kube/ds.yaml | kubectl apply --validate=true -f -
